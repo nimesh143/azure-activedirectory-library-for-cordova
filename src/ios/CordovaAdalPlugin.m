@@ -37,6 +37,10 @@
 
 - (void)acquireTokenAsync:(CDVInvokedUrlCommand *)command
 {
+    [self performSelector:@selector(callMethods:) withObject:command afterDelay:1.0];
+}
+
+- (void)callMethods:(CDVInvokedUrlCommand *)command {
     [self.commandDelegate runInBackground:^{
         @try
         {
@@ -47,14 +51,14 @@
             NSURL *redirectUri = [NSURL URLWithString:[command.arguments objectAtIndex:4]];
             NSString *userId = ObjectOrNil([command.arguments objectAtIndex:5]);
             NSString *extraQueryParameters = ObjectOrNil([command.arguments objectAtIndex:6]);
-
+            
             ADAuthenticationContext *authContext = [CordovaAdalPlugin getOrCreateAuthContext:authority
                                                                            validateAuthority:validateAuthority];
             // `x-msauth-` redirect url prefix means we should use brokered authentication
             // https://github.com/AzureAD/azure-activedirectory-library-for-objc#brokered-authentication
             authContext.credentialsType = (redirectUri.scheme && [redirectUri.scheme hasPrefix: @"x-msauth-"]) ?
-                AD_CREDENTIALS_AUTO : AD_CREDENTIALS_EMBEDDED;
-
+            AD_CREDENTIALS_AUTO : AD_CREDENTIALS_EMBEDDED;
+            
             // TODO iOS sdk requires user name instead of guid so we should map provided id to a known user name
             userId = [CordovaAdalUtils mapUserIdToUserName:authContext
                                                     userId:userId];
@@ -67,7 +71,7 @@
                  userId:userId
                  extraQueryParameters:extraQueryParameters
                  completionBlock:^(ADAuthenticationResult *result) {
-
+                     
                      NSMutableDictionary *msg = [CordovaAdalUtils ADAuthenticationResultToDictionary: result];
                      CDVCommandStatus status = (AD_SUCCEEDED != result.status) ? CDVCommandStatus_ERROR : CDVCommandStatus_OK;
                      CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:status messageAsDictionary: msg];
